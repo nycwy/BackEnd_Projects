@@ -4,9 +4,11 @@ dns.setServers(['1.1.1.1', '8.8.8.8']);
 
 import express from 'express';
 import { connectMongoDB } from './connection.js';
+import userRouter from './routes/user.routes.js';
 
 const app = express();
 const PORT = process.env.PORT ?? 8000;
+app.use(express.json());
 
 connectMongoDB(process.env.MONGODB_URL)
     .then(() => {
@@ -15,6 +17,6 @@ connectMongoDB(process.env.MONGODB_URL)
             console.log(`Server is up and running on port ${PORT}`);
         });
     })
-    .catch((error) => console.error('Error connecting to MongoDB: ', error));
+    .catch((error) => console.error(`Error connecting to MongoDB: ${error}`));
 
-    
+app.use('/user', userRouter);
