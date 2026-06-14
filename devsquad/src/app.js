@@ -13,32 +13,100 @@ const connection = async () => {
             console.log("Server is up and running!");
         });
     } catch (error) {
-        console.log("Cannot connect to the database", error.message);
+        console.log("Cannot connect to the database"+ error.message);
     }
 }
 
+// Create a User to the database
 app.post('/signup', async(req, res) => {
     const user = new User(req.body);
     try {
         await user.save();
         res.send("User created successfully");
     } catch (error) {
-        res.status(400).send("Error saving the user: ", error.message);
+        res.status(400).send("Error saving the user: "+ error.message);
     }
 });
 
-app.get('/user', async (req, res) => {
-    const userEmail = req.body.emailId;
+// Get User by Email
+app.get('/user/email/:emailId', async (req, res) => {
+    const userEmail = req.params.emailId;
     try {
-        const users = await User.find({ emailId: userEmail });
-        if (users.length === 0) {
+        const users = await User.findOne({ emailId: userEmail });
+        if (!users) {
             res.status(404).send("User not found");
-        } else {
-            res.send(users);
         }
+        res.send(users);
     } catch (error) {
         res.status(400).send("Something went wrong!");
     }
-})
+});
+
+// Get all the Users
+app.get('/feed', async (req, res) => {
+    try {
+        const users = await User.find({});
+        res.send(users);
+    } catch (error) {
+        res.status(400).send("Something went wrong!");
+    }
+});
+
+// Get user by ID
+app.get('/user/:id', async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const user = await User.findById(userId)
+        if (!user) {
+            return res.status(404).send('User not found');
+        }
+        res.send(user);
+    } catch (error) {
+        res.status(400).send('Something went wrong');
+    }
+});
+
+// Delete user by ID
+app.delete('/user/:id', async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const deletedUser = await User.findByIdAndDelete(userId);
+        res.send('User deleted successfully');
+    } catch (error) {
+        res.status(400).send('Something went wrong');
+    }
+});
+
+//Update data of a User
+app.patch('/user/:id', async (req, res) => {
+    const userId = req.params.id;
+    const data = req.body;
+
+    try {
+        const ALLOWED_UPDATES = [
+            "firstName",
+            "lastName",
+            "age",
+            "gender",
+            "skills"
+        ];
+
+        const isUpdateAllowed = Object.keys(data).every((k) => ALLOWED_UPDATES.includes(k));
+
+        if (!isUpdateAllowed) {
+            throw new Error("Update not allowed");
+        }
+
+        if (data?.skills.length > 10) {
+            throw new Error("Skills cannot be more than 10");
+        }
+
+        const updatedField = req.body;
+        const user = await User.findByIdAndUpdate(userId, updatedField, { runValidators: true });
+        res.send('User updated successfully');
+    } catch (error) {
+        res.status(400).send('Something went wrong' + error.message);
+    }
+});
 
 connection();
