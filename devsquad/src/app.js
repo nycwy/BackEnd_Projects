@@ -2,6 +2,8 @@ const express = require('express');
 const connectDB = require('./config/database');
 const app = express();
 const User = require('./models/user.model');
+const { validateSignUpData } = require('./utils/signupValidation');
+const bcrypt = require('bcrypt');
 
 app.use(express.json());
 
@@ -18,13 +20,45 @@ const connection = async () => {
 }
 
 // Create a User to the database
-app.post('/signup', async(req, res) => {
-    const user = new User(req.body);
+app.post('/signup', async (req, res) => {
     try {
+        // Signup validation
+        validateSignUpData(req);
+        const { firstName, lastName, emailId, password, age, skills, gender } = req.body;
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const user = new User({
+            firstName,
+            lastName, emailId,
+            password: hashedPassword,
+            age, 
+            skills,
+            gender,
+        });
         await user.save();
         res.send("User created successfully");
     } catch (error) {
-        res.status(400).send("Error saving the user: "+ error.message);
+        res.status(400).send("ERROR: "+ error.message);
+    }
+});
+
+app.post('/login', async (req, res) => {
+    try {
+        const { emailId, password } = req.body;
+        const user = await User.findOne({emailId});
+        if (!user) {
+            throw new Error('Invalid Credentials');
+        }
+        const validPassword = await bcrypt.compare(password, user.password);
+        
+        if (validPassword) {
+            res.send("Login Successful!!");
+        } else {
+            throw new Error("Invalid Credentials");
+        }
+    } catch (error) {
+        res.status(400).send("ERROR: " + error.message);
     }
 });
 
@@ -97,7 +131,7 @@ app.patch('/user/:id', async (req, res) => {
             throw new Error("Update not allowed");
         }
 
-        if (data?.skills.length > 10) {
+        if (data.skills?.length > 10) {
             throw new Error("Skills cannot be more than 10");
         }
 
@@ -105,7 +139,7 @@ app.patch('/user/:id', async (req, res) => {
         const user = await User.findByIdAndUpdate(userId, updatedField, { runValidators: true });
         res.send('User updated successfully');
     } catch (error) {
-        res.status(400).send('Something went wrong' + error.message);
+        res.status(400).send('ERROR: ' + error.message);
     }
 });
 
