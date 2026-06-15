@@ -47,6 +47,7 @@ app.post('/signup', async (req, res) => {
     }
 });
 
+// User Login
 app.post('/login', async (req, res) => {
     try {
         const { emailId, password } = req.body;
@@ -69,6 +70,7 @@ app.post('/login', async (req, res) => {
     }
 });
 
+// Get Profile after login
 app.get('/profile', async (req, res) => {
     try {
         const cookies = req.cookies;
