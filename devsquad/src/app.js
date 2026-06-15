@@ -1,11 +1,15 @@
+require('dotenv').config();
 const express = require('express');
 const connectDB = require('./config/database');
 const app = express();
 const User = require('./models/user.model');
 const { validateSignUpData } = require('./utils/signupValidation');
 const bcrypt = require('bcrypt');
+const cookieParser = require('cookie-parser');
+const jwt = require('jsonwebtoken');
 
 app.use(express.json());
+app.use(cookieParser());
 
 const connection = async () => {
     try {
@@ -53,10 +57,37 @@ app.post('/login', async (req, res) => {
         const validPassword = await bcrypt.compare(password, user.password);
         
         if (validPassword) {
+            const token = await jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
+
+            res.cookie("token", token);
             res.send("Login Successful!!");
         } else {
             throw new Error("Invalid Credentials");
         }
+    } catch (error) {
+        res.status(400).send("ERROR: " + error.message);
+    }
+});
+
+app.get('/profile', async (req, res) => {
+    try {
+        const cookies = req.cookies;
+        const { token } = cookies;
+
+        if (!token) {
+            return res.status(401).send("Please login first.");
+        }
+
+        const decodedMessage = await jwt.verify(token, process.env.JWT_SECRET);
+        const { _id } = decodedMessage;
+        
+        const user = await User.findById(_id);
+        if(!user){
+            return res.status(404).send("User not found.");
+        }
+        const fullName = `${user.firstName} ${user.lastName}`;
+
+        res.send("Welcome Mr. " + fullName);
     } catch (error) {
         res.status(400).send("ERROR: " + error.message);
     }
@@ -68,7 +99,7 @@ app.get('/user/email/:emailId', async (req, res) => {
     try {
         const users = await User.findOne({ emailId: userEmail });
         if (!users) {
-            res.status(404).send("User not found");
+            return res.status(404).send("User not found");
         }
         res.send(users);
     } catch (error) {
