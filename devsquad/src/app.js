@@ -20,7 +20,7 @@ const connection = async () => {
             console.log("Server is up and running!");
         });
     } catch (error) {
-        console.log("Cannot connect to the database"+ error.message);
+        console.log("Cannot connect to the database" + error.message);
     }
 }
 
@@ -37,14 +37,14 @@ app.post('/signup', async (req, res) => {
             firstName,
             lastName, emailId,
             password: hashedPassword,
-            age, 
+            age,
             skills,
             gender,
         });
         await user.save();
         res.send("User created successfully");
     } catch (error) {
-        res.status(400).send("ERROR: "+ error.message);
+        res.status(400).send("ERROR: " + error.message);
     }
 });
 
@@ -52,14 +52,14 @@ app.post('/signup', async (req, res) => {
 app.post('/login', async (req, res) => {
     try {
         const { emailId, password } = req.body;
-        const user = await User.findOne({emailId});
+        const user = await User.findOne({ emailId });
         if (!user) {
             throw new Error('Invalid Credentials');
         }
-        const validPassword = await bcrypt.compare(password, user.password);
-        
+        const validPassword = await user.validatePassword(password);
+
         if (validPassword) {
-            const token = await jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
+            const token = user.getJWT();
 
             res.cookie("token", token);
             res.send("Login Successful!!");
@@ -72,7 +72,7 @@ app.post('/login', async (req, res) => {
 });
 
 // Get Profile after login
-app.get('/profile', userAuth,  async (req, res) => {
+app.get('/profile', userAuth, async (req, res) => {
     try {
         const user = req.user;
         const fullName = `${user.firstName} ${user.lastName}`;
@@ -162,6 +162,13 @@ app.patch('/user/:id', async (req, res) => {
     } catch (error) {
         res.status(400).send('ERROR: ' + error.message);
     }
+});
+
+// Connection request demo
+app.post('/connectionRequest', userAuth, async (req, res) => {
+    const user = req.user;
+    console.log('sending a connection request');
+    res.send(user.firstName + ' sent you a connection request');
 });
 
 connection();
