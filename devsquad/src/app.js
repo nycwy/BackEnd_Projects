@@ -7,6 +7,7 @@ const { validateSignUpData } = require('./utils/signupValidation');
 const bcrypt = require('bcrypt');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
+const { userAuth } = require('./middlewares/auth');
 
 app.use(express.json());
 app.use(cookieParser());
@@ -71,22 +72,9 @@ app.post('/login', async (req, res) => {
 });
 
 // Get Profile after login
-app.get('/profile', async (req, res) => {
+app.get('/profile', userAuth,  async (req, res) => {
     try {
-        const cookies = req.cookies;
-        const { token } = cookies;
-
-        if (!token) {
-            return res.status(401).send("Please login first.");
-        }
-
-        const decodedMessage = await jwt.verify(token, process.env.JWT_SECRET);
-        const { _id } = decodedMessage;
-        
-        const user = await User.findById(_id);
-        if(!user){
-            return res.status(404).send("User not found.");
-        }
+        const user = req.user;
         const fullName = `${user.firstName} ${user.lastName}`;
 
         res.send("Welcome Mr. " + fullName);
