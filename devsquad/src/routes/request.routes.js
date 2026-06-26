@@ -80,6 +80,6 @@ requestRouter.post('/request/review/:status/:requestId', userAuth, async (req, r
     } catch (error) {
         return res.status(400).send("ERROR: " + error.message);
     }
-})
+});
 
 module.exports = requestRouter;
