@@ -3,6 +3,7 @@ const { userAuth } = require('../middlewares/auth');
 const ConnectionRequest = require('../models/connectionRequest.model');
 const userRouter = express.Router();
 
+// Safe to be exposed in the connection section
 const USER_SAFE_DATA = "firstName lastName age gender skills";
 
 // Get all the pending connection request for the logged in user
