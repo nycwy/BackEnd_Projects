@@ -1,6 +1,7 @@
 const express = require('express');
 const { userAuth } = require('../middlewares/auth');
 const ConnectionRequest = require('../models/connectionRequest.model');
+const User = require('../models/user.model');
 const userRouter = express.Router();
 
 // Safe to be exposed in the connection section
@@ -50,5 +51,47 @@ userRouter.get('/user/connections', userAuth, async (req, res) => {
         return res.status(400).send({ message: error.message });
     }
 });
+
+// Feed data
+userRouter.get('/feed', userAuth, async (req, res) => {
+    try {
+        const loggedInUser = req.user;
+
+        const page = parseInt(req.query.page) || 1;
+        let limit = parseInt(req.query.limit) || 10;
+        limit = limit > 10 ? 10 : limit;
+
+        const skip = (page - 1) * limit;
+
+        const connectionRequest = await ConnectionRequest.find({
+            $or: [
+                { fromUserId: loggedInUser._id },
+                { toUserId: loggedInUser._id }
+            ],
+        })
+            .select("fromUserId toUserId")
+
+        const hideUsersFromFeed = new Set();
+        connectionRequest.forEach((req) => {
+            hideUsersFromFeed.add(req.fromUserId.toString());
+            hideUsersFromFeed.add(req.toUserId.toString());
+        });
+
+        const users = await User.find({
+            $and: [
+                { _id: { $nin: Array.from(hideUsersFromFeed) } },
+                { _id: { $ne: loggedInUser._id } },
+            ],
+        })
+            .select(USER_SAFE_DATA)
+            .skip(skip)
+            .limit(limit)
+
+        res.send(users);
+
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+})
 
 module.exports = userRouter;
