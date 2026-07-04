@@ -45,6 +45,15 @@ const userSchema = new mongoose.Schema({
         enum: ['male', 'female', 'others'],
         message: `{VALUE} is not a gender type`,
     },
+    photoURL: {
+        type: String,
+        default: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQpfBT6bKwsFHr3INpJ7d7yesRZvZ_BKL2UxIJG-a0pTA&s=10",
+        validate(value) {
+            if (!validator.isURL(value)) {
+                throw new Error("Invalid Photo URL: " + value);
+            }
+        }
+    },
     skills: {
         type: [String],
     }

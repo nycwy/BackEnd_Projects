@@ -21,6 +21,7 @@ authRouter.post('/signup', async (req, res) => {
             age,
             skills,
             gender,
+            photoURL
         });
         await user.save();
         res.send("User created successfully");
