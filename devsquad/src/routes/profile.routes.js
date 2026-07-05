@@ -13,7 +13,7 @@ profileRouter.get('/profile/view', userAuth, async (req, res) => {
         const user = req.user;
         const fullName = `${user.firstName} ${user.lastName}`;
 
-        res.send("Welcome Mr. " + fullName);
+        res.json(user);
     } catch (error) {
         res.status(400).send("ERROR: " + error.message);
     }
