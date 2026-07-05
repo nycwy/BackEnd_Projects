@@ -5,7 +5,7 @@ const User = require('../models/user.model');
 const userRouter = express.Router();
 
 // Safe to be exposed in the connection section
-const USER_SAFE_DATA = "firstName lastName age gender skills photoURL";
+const USER_SAFE_DATA = "firstName lastName age gender skills photoURL about";
 
 // Get all the pending connection request for the logged in user
 userRouter.get('/user/requests/received', userAuth, async (req, res) => {
@@ -87,7 +87,7 @@ userRouter.get('/feed', userAuth, async (req, res) => {
             .skip(skip)
             .limit(limit)
 
-        res.send(users);
+        res.json(users);
 
     } catch (error) {
         return res.status(500).json({ message: error.message });
